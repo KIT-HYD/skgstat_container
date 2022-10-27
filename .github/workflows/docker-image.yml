@@ -19,5 +19,5 @@ jobs:
         registry: ghcr.io
         username: "vforwater"
         password: ${{ secrets.PAT }}
-        repository: vforwater/tbr_template_python
+        repository: vforwater/tbr_skgstat
         tags: latest,${{ github.ref_name }}
