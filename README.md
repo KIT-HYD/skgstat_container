@@ -1,8 +1,9 @@
-# tool_template_python
+# Geostatistical tools container
 
-This is the template for a generic containerized Python tool. This template can be used to generate new Github repositories from it.
+This repository contains a docker image for geostatistical data processing using standardized input and outputs. 
+This is based on the template for a generic [containerized Python tool](https://github.com/vforwater(tool_template_python). 
 
-## How generic?
+## How standardized?
 
 Tools using this template can be run by the [toolbox-runner](https://github.com/hydrocode-de/tool-runner). 
 That is only convenience, the tools implemented using this template are independent of any framework.
@@ -30,15 +31,17 @@ Each container needs at least the following structure:
 
 ## How to build the image?
 
-You can build the image from within the root of this repo by
+The image is already built for you and can be found in the packages section.
+
+Alternatively, you can build the image from within the root of this repo by
 ```
-docker build -t tbr_python_tempate .
+docker build -t tbr_skgstat .
 ```
 
 Use any tag you like. If you want to run and manage the container with [toolbox-runner](https://github.com/hydrocode-de/tool-runner)
 they should be prefixed by `tbr_` to be recognized. 
 
-Alternatively, the contained `.github/workflows/docker-image.yml` will build the image for you 
+Alternatively, if you clone this repo, the contained `.github/workflows/docker-image.yml` will build the image for you 
 on new releases on Github. You need to change the target repository in the aforementioned yaml and the repository needs a 
 [personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
 in the repository secrets in order to run properly.
@@ -52,7 +55,7 @@ The `run.py` has to take care of that.
 
 To invoke the docker container directly run something similar to:
 ```
-docker run --rm -it -v /path/to/local/in:/in -v /path/to/local/out:/out -e TOOL_RUN=foobar tbr_python_template
+docker run --rm -it -v /path/to/local/in:/in -v /path/to/local/out:/out -e TOOL_RUN=variogram tbr_skgstat
 ```
 
 Then, the output will be in your local out and based on your local input folder. Stdout and Stderr are also connected to the host.
@@ -63,19 +66,36 @@ With the toolbox runner, this is simplyfied:
 from toolbox_runner import list_tools
 tools = list_tools() # dict with tool names as keys
 
-foobar = tools.get('foobar')  # it has to be present there...
-foobar.run(result_path='./', foo_int=1337, foo_string="Please change me")
+vario_tool = tools.get('variogram')  # it has to be present there...
+
+# get the input data from anywhere, ie:
+import pandas as pd
+df = pd.read_csv('local/file.cav')
+
+vario_tool.run(result_path='./', coordinates=df[['x', 'y']].values, values=df.obs.values, n_lags=25, model='exponential', estimator='cresssie')
 ```
 The example above will create a temporary file structure to be mounted into the container and then create a `.tar.gz` on termination of all 
 inputs, outputs, specifications and some metadata, including the image sha256 used to create the output in the current working directory.
 
-## What about real tools, no foobar?
+## What is included?
 
-Yeah. 
+Currently, only variogram estimation using SciKit-GStat and kriging using GSTools is implemented. Simulations and parameter grid search are on the agenda.
 
-1. change the `tool.yml` to describe your actual tool
-2. add any `pip install` or `apt-get install` needed to the dockerfile
-3. add additional source code to `/src`
-4. change the `run.py` to consume parameters and data from `/in` and useful output in `out`
-5. build, run, rock!
+You can learn about the available tools and their parameters directly from the container:
+
+```
+docker run --rm -it tbr_skgstat bash cat /srv/tool.yml
+```
+
+or using toolbox runner
+```python
+from toolbox_runner import list_tools
+tools = list_tools() # dict with tool names as keys
+
+krige_tool = tools.get('kriging')  # it has to be present there...
+krige_tool.title
+krige_tool.description
+krige_toool.parameters
+
+```
 
