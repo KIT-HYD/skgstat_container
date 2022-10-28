@@ -1,12 +1,12 @@
-# Pull any base image that includes python3
-FROM python:3.10
+# base image
+FROM python:3.10.8
 
-# install the toolbox runner tools
-RUN pip install toolbox-runner
+# install geostatistical libraries
+RUN pip install scikit-gstat==1.0.2 gstools==1.4.0 plotly==5.11.0
 
 
-# Do anything you need to install tool dependencies here
-RUN echo "Replace this line with a tool"
+# install the Python toolbox-runner
+RUN pip install toolbox-runner==0.5.0
 
 # create the tool input structure
 RUN mkdir /in
