@@ -103,4 +103,26 @@ tools:
           - quadratic
         description: Predefined drift function. Only needed for Universal Kriging.
         optional: true
+  simulation:
+    title: Geostatistical simulation
+    description: Perform an iterative geostatistical simulation using the method after Heße (2013)
+    version: 1.0
+    parameters:
+      coordinates:
+        type: file
+      values:
+        type: file
+      variogram:
+        type: file
+        description: A JSON file containing the variogram parameters as returned by Variogram.describe()['params']
+      grid:
+        type: string
+        description: The grid size needs to be defined by a string like NNxMM, where NN are the number of rows and MM the number of columns 
+      n_simulations:
+        type: int
+        description: Number of simulations to run. Defaults to 100
+      seed:
+        type: int
+        description: Seed for the random number generator. Defaults to 42. It is highly recommended to change this number on every run
+        
       

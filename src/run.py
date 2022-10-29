@@ -4,6 +4,7 @@ import json
 from datetime import datetime as dt
 
 import skgstat as skg
+import gstools as gs
 from plotly.io import to_json
 import numpy as np
 from toolbox_runner.parameter import parse_parameter
@@ -107,6 +108,67 @@ elif toolname == 'kriging':
     np.savetxt('/out/sigma.mat', sigma)
 
     # create the output
+    vario_results(vario)
+
+elif toolname == 'simulation':
+    # get the parameters
+    try:
+        coords = kwargs['coordinates']
+        values = kwargs['values']
+        vario_params = kwargs['variogram']
+    except Exception as e:
+        print(str(e))
+        sys.exit(1)
+
+    # build the variogram
+    print('Estimating variogram...')
+    vario = skg.Variogram(coords, values, **vario_params)
+    print(vario)
+
+    # build the grid
+    try:
+        dims = [int(_) for _ in kwargs['grid'].split('x')]
+        assert len(dims) == vario.coordinates.shape[1]
+    except Exception as e:
+        print(str(e))
+        sys.exit(1)
+
+    # build the ranges
+    coord_mesh = []
+    coords = vario.coordinates
+    for d, dim in enumerate(dims):
+        coord_mesh.append([np.linspace(coords[:, d].min(), coords[:,d].max(), dim)])
+
+    # get a kriging instance and a random field generator
+    krige = vario.to_gs_krige()
+    cond_srf = gs.CondSRF(krige)
+
+    # build the result container
+    fields = []
+
+    # get the N keyword, defaults to 100
+    N = kwargs.get('n_simulations', 100)
+    seed = kwargs.get('seed', 42)
+    
+    print(f'Starting {N} iterations seeded {seed}')
+    for i in range(N):
+        field = cond_srf.structured(coord_mesh, seed=seed + i)
+        fields.append(field)
+
+        print(f"[{i + 1}/{N}]")
+    
+    # TODO: enable saving all simulations into a netCDF
+    ndims = len(dims)
+    stack = np.stack(fields, axis=ndims)
+
+    # create results
+    sim_mean = np.mean(stack, axis=ndims)
+    sim_std = np.std(stack, axis=ndims)
+
+    np.savetxt('/out/simulation_mean.mat', sim_mean)
+    np.savetxt('/out/simulation_std.mat', sim_std)
+
+    # save variogram for reference
     vario_results(vario)
 
 else:
