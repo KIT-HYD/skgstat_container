@@ -124,5 +124,46 @@ tools:
       seed:
         type: int
         description: Seed for the random number generator. Defaults to 42. It is highly recommended to change this number on every run
-        
-      
+  sample:
+    title: Sample field data
+    description: | 
+      In oder to work with the geostatistical toolbox, geospatial data needs to be broken down
+      to a field representation. The tool will write two arrays to disk: the coordinates
+      at which the field was sampled and the field quantities at these locations.
+    version: 1.0
+    parameters:
+      field:
+        type: file
+        description: | 
+          field repesentation as .mat (1D, 2D) or .nc (ND) with only a single variable.
+      sample_size:
+        type: integer
+      method:
+        type: enum
+        values:
+          - random
+          - grid
+      seed:
+        type: int
+        description: Only valid for method='random' sampling. Initial state of the random number generator.
+      spacing:
+        type: integer
+        array: true
+        description: | 
+          Only valid for method='grid'. Either spacing or shape is mandatory.
+          Either one integer, or an integer for each dimension of the field. 
+          This number specifies the grid spacing along the respective axis.
+      shape:
+        type:  integer
+        array: true
+        description: | 
+          Only valid for method='grid'. Either spacing or shape is mandatory.
+          Either one integer, or an integer for each dimension of the field. 
+          This number specifies the number of grid cells along the respective axis.
+      offset:
+        type: integer
+        array: true
+        description: |
+          Only valid for method='grid'. Optional parameter.
+          Either one integer or an integerger for each dimension of the field.
+          Specifies the offset from the field boundary in grid units.
