@@ -7,13 +7,13 @@ import skgstat as skg
 import gstools as gs
 import numpy as np
 import progressbar
-from toolbox_runner.parameter import parse_parameter
+from json2args import get_parameter
 from skgstat_uncertainty.processor import sampling
 
 from tool_lib import vario_results, build_grid, parse_array_input
 
 # parse parameters
-kwargs = parse_parameter()
+kwargs = get_parameter()
 
 # check if a toolname was set in env
 toolname = os.environ.get('TOOL_RUN', 'variogram').lower()
