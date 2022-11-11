@@ -2,6 +2,8 @@ import os
 import sys
 from datetime import datetime as dt
 from pprint import pprint
+from time import time
+import json
 
 import skgstat as skg
 import gstools as gs
@@ -57,7 +59,6 @@ elif toolname == 'kriging':
     print(vario)
 
     # build the grid
-    # TODO: - make this work in ND, not only 2d - see simulation
     try:
         coord_mesh = build_grid(vario, kwargs['grid'])
     except Exception as e:
@@ -185,7 +186,62 @@ elif toolname == 'sample':
     np.savetxt('/out/coordinates.mat', coordinates)
     np.savetxt('/out/values.mat', values)
 
+elif toolname == 'cross-validation':
+    # get the parameters
+    try:
+        coords = kwargs['coordinates']
+        values = kwargs['values']
+        vario_params = kwargs['variogram']
+        measure = kwargs.get('measure', 'rmse')
+    except Exception as e:
+        print(str(e))
+        sys.exit(1)
+
+    # build the variogram
+    print('Estimating variogram...')
+    vario = skg.Variogram(coords, values, **vario_params)
+    print(vario)
+
+    # get the cov-model
+    covmodel = vario.to_gstools()
+
+    # get the number
+    n = len(coords)
+    err = []
+
+    # do the cross validation
+    t1 = time()
+    for it in range(n):
+        x = np.array([c for i, c in enumerate(coords) if i != it]).T
+        y = [v for i, v in enumerate(values) if i != it]
+
+        # build the kriging
+        krige = gs.Krige(covmodel, x, y, fit_variogram=False)
+        y_pred = krige(coords[it].T)
+
+        err.append(y_pred - values[it])
+    t2 =  time()
+    
+    # calculate the measure
+    if measure.lower() == 'rmse':
+        m = np.sqrt(np.mean(np.power(err, 2)))
+    elif measure.lower() == 'mad':
+        m = np.median(np.abs(err))
+    else:
+        m = np.mean(np.abs(err))
+    
+    # print results
+    print(f'Took {np.round(t2 - t1, 2)} seconds.')
+    print(f'{measure.upper()}: {m}')
+
+    # also to json
+    with open('/out/result.json', 'w') as f:
+        json.dump({measure: m}, f)
+
+    # print the variogram results
+    vario_results(vario)
+
 # Tool is unknown
 else:
-    with open('/out/error.log', 'w') as f:
-        f.write(f"[{dt.now().isocalendar()}] Either no TOOL_RUN environment variable available, or '{toolname}' is not valid.\n")
+    print(f"[{dt.now().isocalendar()}] Either no TOOL_RUN environment variable available, or '{toolname}' is not valid.\n")
+

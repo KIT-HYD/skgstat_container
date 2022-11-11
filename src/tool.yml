@@ -167,3 +167,25 @@ tools:
           Only valid for method='grid'. Optional parameter.
           Either one integer or an integerger for each dimension of the field.
           Specifies the offset from the field boundary in grid units.
+  cross-validation:
+    title: Leave-one-out cross-validation
+    description: | 
+      Run a leave-one-out cross-validation for any given variogram parameterization. 
+      The cross validation is done using orinary kriging on all but one condition points
+      to predict the point. Returns either the MAE or RMSE of observations ~ predictions
+    version: 1.0
+    parameters:
+      coordinates:
+        type: file
+      values:
+        type: file
+      variogram:
+        type: file
+        description: A JSON file containing the variogram parameters as returned by Variogram.describe()['params']
+      measure:
+        type: enum
+        values:
+          - rmse
+          - mae
+          - mad
+        description: Measure to assess the cross-validation
