@@ -83,8 +83,8 @@ elif toolname == 'kriging':
     print(f'done. Took {round((t2 - t1).total_seconds(), 2)} seconds.')
 
     # write results
-    np.savetxt('/out/kriging.mat', field)
-    np.savetxt('/out/sigma.mat', sigma)
+    np.savetxt('/out/kriging.dat', field)
+    np.savetxt('/out/sigma.dat', sigma)
 
     # create the output
     vario_results(vario)
@@ -136,8 +136,8 @@ elif toolname == 'simulation':
     sim_mean = np.mean(stack, axis=ndims)
     sim_std = np.std(stack, axis=ndims)
 
-    np.savetxt('/out/simulation_mean.mat', sim_mean)
-    np.savetxt('/out/simulation_std.mat', sim_std)
+    np.savetxt('/out/simulation_mean.dat', sim_mean)
+    np.savetxt('/out/simulation_std.dat', sim_std)
 
     # save variogram for reference
     vario_results(vario)
@@ -183,8 +183,8 @@ elif toolname == 'sample':
     print('done.')
 
     # save
-    np.savetxt('/out/coordinates.mat', coordinates)
-    np.savetxt('/out/values.mat', values)
+    np.savetxt('/out/coordinates.dat', coordinates)
+    np.savetxt('/out/values.dat', values)
 
 elif toolname == 'cross-validation':
     # get the parameters
