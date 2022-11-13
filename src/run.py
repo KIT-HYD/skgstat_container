@@ -145,7 +145,7 @@ elif toolname == 'simulation':
 elif toolname == 'sample':
     # get the field data
     try:
-        field = parse_array_input(kwargs['field'], )
+        field = parse_array_input(kwargs['field'])
     except Exception as e:
         print(str(e))
         sys.exit(1)

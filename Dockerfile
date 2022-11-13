@@ -8,7 +8,7 @@ RUN pip install scikit-gstat==1.0.2 gstools==1.4.0 plotly==5.11.0 skgstat-uncert
 RUN pip install progressbar2
 
 # install the Python toolbox-runner
-RUN pip install json2args==0.2.0
+RUN pip install json2args==0.3.0
 
 # create the tool input structure
 RUN mkdir /in
