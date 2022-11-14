@@ -235,7 +235,7 @@ elif toolname == 'cross-validation':
     print(f'{measure.upper()}: {m}')
 
     # also to json
-    with open('/out/result.json', 'w') as f:
+    with open('/out/cross_validation.json', 'w') as f:
         json.dump({measure: m}, f)
 
     # print the variogram results
