@@ -1,7 +1,7 @@
 # Geostatistical tools container
 
 This repository contains a docker image for geostatistical data processing using standardized input and outputs. 
-This is based on the template for a generic containerized Python [tool](https://github.com/vforwater(tool_template_python). 
+This is based on the template for a generic containerized Python [tool](https://github.com/vforwater/tool_template_python). 
 
 ## How standardized?
 
@@ -9,8 +9,8 @@ Tools using this template can be run by the [toolbox-runner](https://github.com/
 That is only convenience, the tools implemented using this template are independent of any framework.
 
 The main idea is to implement a common file structure inside container to load inputs and outputs of the 
-tool. The template shares this structures with the R [template](https://github.com/vforwater(tool_template_r)
-and [Octave template](https://github.com/vforwater(tool_template_octave), but can be mimiced in any container.
+tool. The template shares this structures with the R [template](https://github.com/vforwater/tool_template_r)
+and [Octave template](https://github.com/vforwater/tool_template_octave), but can be mimiced in any container.
 
 Each container needs at least the following structure:
 
