@@ -3,7 +3,6 @@ tools:
     title: Variogram fitting
     description: Estimate an empirical variogram and fit a model
     version: 1.1
-    cmd: python run.py 
     parameters:
       coordinates:
         type: file
@@ -14,8 +13,10 @@ tools:
       n_lags: 
         type: integer
         min: 3
+        default: 10
       bin_func:
         type: enum
+        default: even
         values:
           - even
           - uniform
@@ -28,6 +29,7 @@ tools:
           - ward
       model:
         type: enum
+        default: spherical
         values:
           - spherical
           - exponential
@@ -37,12 +39,14 @@ tools:
           - cubic
       estimator:
         type: enum
+        default: matheron
         values:
           - matheron
           - cressie
           - dowd
       maxlag:
         type: string
+        optional: true
         description: Can be 'median', 'mean', a number < 1 for a ratio of maximum separating distance or a number > 1 for an absolute distance 
       fit_method:
         type: enum
@@ -52,18 +56,23 @@ tools:
           - manual
       use_nugget:
         type: bool
+        default: false
         description: Enable the nugget parameter. Defaults to False, which will set the nugget parameter to 0.
       fit_range:
         type: float
+        optional: true
         description: Only valid if fit_method='manual'. The variogram effective range.
       fit_sill:
         type: float
+        optional: tre
         description: Only valid if fit_method='manual'. The variogram sill.
       fit_nugget:
         type: float
+        optional: true
         description: Only valid if fit_method='manual'. The variogram nugget. 
       fit_sigma:
         type: enum
+        default: None
         values:
           - None
           - linear
