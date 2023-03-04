@@ -27,11 +27,10 @@ if toolname == 'variogram':
         kwargs['maxlag'] = float(kwargs['maxlag'])
     
     # handle fit_sigma settings
-    if 'fit_sigma' in kwargs and (kwargs['fit_sigma'] is None or kwargs['fit_sigma'] == 'None'):
-        del kwargs['fit_sigma']
+    if 'fit_sigma' in kwargs and (kwargs['fit_sigma'] is None or kwargs['fit_sigma'].lower() == 'none'):
+        kwargs['fit_sigma'] = None
     
-    print('Estimating a variogram useing parameters:')
-    pprint(kwargs)
+    print('Estimating a variogram...')
 
     # estimate the variogram
     vario = skg.Variogram(**kwargs)
