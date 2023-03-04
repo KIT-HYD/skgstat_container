@@ -14,8 +14,10 @@ tools:
         type: integer
         min: 3
         default: 10
+        description: Number of separating distance lag classes. Is ignored for bin_funcs [fd, sturges, scott, doane, sqrt]
       bin_func:
         type: enum
+        description: Function to group the distance matrix into lag classes.
         default: even
         values:
           - even
@@ -29,6 +31,7 @@ tools:
           - ward
       model:
         type: enum
+        description: Interpretive theoretical variogram model function to model the covariance
         default: spherical
         values:
           - spherical
@@ -39,6 +42,7 @@ tools:
           - cubic
       estimator:
         type: enum
+        description: Semi-variance estimation method to calculate the empirical variogram
         default: matheron
         values:
           - matheron
@@ -144,7 +148,7 @@ tools:
       field:
         type: file
         description: | 
-          field repesentation as .mat (1D, 2D) or .nc (ND) with only a single variable.
+          field repesentation as .dat (1D, 2D) or .nc (ND) with only a single variable.
       sample_size:
         type: integer
       method:
@@ -174,14 +178,14 @@ tools:
         array: true
         description: |
           Only valid for method='grid'. Optional parameter.
-          Either one integer or an integerger for each dimension of the field.
+          Either one integer or an integer for each dimension of the field.
           Specifies the offset from the field boundary in grid units.
   cross-validation:
     title: Leave-one-out cross-validation
     description: | 
       Run a leave-one-out cross-validation for any given variogram parameterization. 
       The cross validation is done using orinary kriging on all but one condition points
-      to predict the point. Returns either the MAE or RMSE of observations ~ predictions
+      to predict the point. Returns either the MAE, MAD or RMSE of observations ~ predictions
     version: 1.0
     parameters:
       coordinates:

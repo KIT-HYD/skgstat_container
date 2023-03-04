@@ -1,6 +1,6 @@
 import json
 
-from plotly.io import to_json
+from plotly.io import write_json
 import skgstat as skg
 import numpy as np
 import xarray as xr
@@ -26,7 +26,7 @@ def vario_results(vario: skg.Variogram, add_result=['vario', 'params', 'html', '
         skg.plotting.backend('plotly')
         fig = vario.plot()
         fig.write_html('/out/variogram.html')
-        to_json(fig, '/out/plotly_variogram.json')
+        write_json(fig, '/out/variogram.plotly.json')
 
     # create a PDF
     if 'pdf' in add_result:
