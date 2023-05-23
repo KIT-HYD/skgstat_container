@@ -32,6 +32,9 @@ Each container needs at least the following structure:
 ## How to build the image?
 
 The image is already built for you and can be found in the packages section.
+```
+docker pull ghcr.io/vforwater/tbr_skgstat
+```
 
 Alternatively, you can build the image from within the root of this repo by
 ```
