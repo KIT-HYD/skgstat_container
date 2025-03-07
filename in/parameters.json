@@ -1,8 +1,0 @@
-{
-    "variogram": {
-        "coordinates": "/in/coordinates.dat",
-        "values": "/in/values.dat",
-        "n_lags": 15,
-        "model": "exponential"
-    }
-}

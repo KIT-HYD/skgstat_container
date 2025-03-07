@@ -2,14 +2,7 @@ tools:
   variogram:
     title: Variogram fitting
     description: Estimate an empirical variogram and fit a model
-    version: 1.1
     parameters:
-      coordinates:
-        type: file
-        description: Pass either a (N, D) shaped numpy array, or a .mat file containing the matrix of observation location coordinates
-      values:
-        type: file
-        description: Pass either a (N, 1) shaped numpy array or a .mat file containing the matrix of observations
       n_lags: 
         type: integer
         min: 3
@@ -50,7 +43,7 @@ tools:
           - dowd
       maxlag:
         type: string
-        optional: true
+        default: median
         description: Can be 'median', 'mean', a number < 1 for a ratio of maximum separating distance or a number > 1 for an absolute distance 
       fit_method:
         type: enum
@@ -58,6 +51,7 @@ tools:
           - trf
           - lm
           - manual
+        default: trf
       use_nugget:
         type: bool
         default: false
@@ -84,18 +78,36 @@ tools:
           - sqrt
           - sq
         description: Use a distance dependent weight on fits to favor closer bins. Do not set for 
+      sample_size:
+        type: integer
+        default: 1000
+        description: | 
+          Number of data points to use for the empirical variogram. This is used as a maximum sample size. If the passed data is larger, 
+          a random subsample will be taken from the supplied sample data. If instead a field is used, the field will be sub-sampled on
+          along the spatial dimensions. If the field has a temporal dimension, it will be aggregated.
+          If you set the sample_size to a **nagative value** (-1), the entire input data will be used, which may result in long runtimes.
+    data:
+      field:
+        extension:
+          - .nc
+          - .tif
+        description: | 
+          Input data as a field, like a NetCDF variable or a GeoTiff. If these files get too large, the tool
+          will operate on a sample. You can also force the sample, by setting a positive sample size.
+        example: /input/cmip_prec.nc
+      sample:
+        extension:
+          - csv
+          - parquet
+        description: | 
+          Input data as a spatial sample, like a CSV or parquet file. The tool will check for spatial columns
+          named ('x', 'y', 'lon', 'lat', 'longitude', 'latitude') and use the first non-spatial column as the value column.
+          If there is more than one non-spatial column, a cross-variogram is calculated.
+          
   kriging:
     title: Kriging interpolation
     description: Utilize GSTools to interpolate to target grid using an estimated variogram 
-    version: 1.0
     parameters:
-      coordinates:
-        type: file
-      values:
-        type: file
-      variogram:
-        type: file
-        description: A JSON file containing the variogram parameters as returned by Variogram.describe()['params']
       grid:
         type: string
         description: The grid size needs to be defined by a string like NNxMM, where NN are the number of rows and MM the number of columns 
@@ -116,10 +128,21 @@ tools:
           - quadratic
         description: Predefined drift function. Only needed for Universal Kriging.
         optional: true
+    data:
+      variogram:
+        extension:
+          - json
+          - pkl
+        description: |
+          A JSON file containing the variogram parameters as returned by Variogram.describe()['params'].
+          You can use the 'variogram' tool to generate such a file in the output.
+          You can only use the 
+        example: /input/variogram.json
+
+  
   simulation:
     title: Geostatistical simulation
     description: Perform an iterative geostatistical simulation using the method after Heße (2013)
-    version: 1.0
     parameters:
       coordinates:
         type: file
@@ -137,68 +160,3 @@ tools:
       seed:
         type: int
         description: Seed for the random number generator. Defaults to 42. It is highly recommended to change this number on every run
-  sample:
-    title: Sample field data
-    description: | 
-      In oder to work with the geostatistical toolbox, geospatial data needs to be broken down
-      to a field representation. The tool will write two arrays to disk: the coordinates
-      at which the field was sampled and the field quantities at these locations.
-    version: 1.0
-    parameters:
-      field:
-        type: file
-        description: | 
-          field repesentation as .dat (1D, 2D) or .nc (ND) with only a single variable.
-      sample_size:
-        type: integer
-      method:
-        type: enum
-        values:
-          - random
-          - grid
-      seed:
-        type: int
-        description: Only valid for method='random' sampling. Initial state of the random number generator.
-      spacing:
-        type: integer
-        array: true
-        description: | 
-          Only valid for method='grid'. Either spacing or shape is mandatory.
-          Either one integer, or an integer for each dimension of the field. 
-          This number specifies the grid spacing along the respective axis.
-      shape:
-        type:  integer
-        array: true
-        description: | 
-          Only valid for method='grid'. Either spacing or shape is mandatory.
-          Either one integer, or an integer for each dimension of the field. 
-          This number specifies the number of grid cells along the respective axis.
-      offset:
-        type: integer
-        array: true
-        description: |
-          Only valid for method='grid'. Optional parameter.
-          Either one integer or an integer for each dimension of the field.
-          Specifies the offset from the field boundary in grid units.
-  cross-validation:
-    title: Leave-one-out cross-validation
-    description: | 
-      Run a leave-one-out cross-validation for any given variogram parameterization. 
-      The cross validation is done using orinary kriging on all but one condition points
-      to predict the point. Returns either the MAE, MAD or RMSE of observations ~ predictions
-    version: 1.0
-    parameters:
-      coordinates:
-        type: file
-      values:
-        type: file
-      variogram:
-        type: file
-        description: A JSON file containing the variogram parameters as returned by Variogram.describe()['params']
-      measure:
-        type: enum
-        values:
-          - rmse
-          - mae
-          - mad
-        description: Measure to assess the cross-validation
