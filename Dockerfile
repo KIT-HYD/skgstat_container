@@ -29,5 +29,8 @@ RUN mkdir /out
 RUN mkdir /src
 COPY ./src /src
 
+# copy the citation file - looks funny to make COPY not fail if the file is not there
+COPY ./CITATION.cf[f] /src/CITATION.cff
+
 WORKDIR /src
 CMD ["python", "run.py"]

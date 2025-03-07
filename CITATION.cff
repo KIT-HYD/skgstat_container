@@ -1,0 +1,45 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: Geostatistical toolbox
+message: >-
+  This repository contains a docker image for geostatistical data processing using standardized input and outputs. 
+  This is based on the template for a generic containerized Python [tool](https://github.com/vforwater/tool_template_python). 
+type: software
+authors:
+  - given-names: Mirko
+    family-names: Mälicke
+    email: mirko.maelicke@KIT.edu
+    affiliation: >-
+      Institute for Water and Environment, Hydrology,
+      Karlsruhe Institute for Technology (KIT)
+    orcid: 'https://orcid.org/0000-0002-0424-2651'
+repository-code: 'https://github.com/VForWaTer/tool_geostatistics'
+url: 'https://vforwater.github.io/tool-specs/'
+abstract: >-
+  This repository contains a docker image for geostatistical data processing using standardized input and outputs. 
+  This is based on the template for a generic containerized Python [tool](https://github.com/vforwater/tool_template_python). 
+
+  Currently, there are three tools implemented:
+
+  1. Geostatistical variogram estimation
+  2. Kriging interpolation
+  3. Geostatistical simulation
+
+  In order to run an interpolation or simulation,you need to provide a valid variogram first. The variogram tool is accompanied
+  by extensive plotting to validate its geospatial robustness. 
+  Variograms can be calculated for spatially distributed samples, or spatially dense fields. You need to provide either of 
+  both inputs. If a field is used, it is highly recommended to subsample it instead of resolving all coordinates into a sample.
+  The tool defaults to a maximum sample size of 1000, which can be disabled by setting the sample_size parameter to -1.
+keywords:
+  - scikit-gstat
+  - gstools
+  - variogram
+  - kriging
+  - docker
+  - tool-spec
+  - V-For-WaTer
+license: GPL v3
+version: '1.4'
+date-released: '2025-03-07'
