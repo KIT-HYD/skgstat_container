@@ -131,3 +131,6 @@ dmypy.json
 
 # ignore test folder
 test
+out
+.vscode
+.DS_Store
