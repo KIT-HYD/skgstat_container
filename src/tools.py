@@ -4,6 +4,7 @@ import pickle
 from pathlib import Path
 
 import numpy as np
+import xarray as xr
 import skgstat as skg
 from plotly.io import write_json
 
@@ -100,7 +101,7 @@ def read_saved_variogram(path: str) -> Generator[skg.Variogram, None, None]:
             raise ValueError(f"Cannot load variogram from {path} as it is not a supported file format (.pkl, .json).")
 
 
-def build_grid(vario: skg.Variogram, grid_spec: str):
+def build_grid(vario: skg.Variogram, grid_spec: str) -> list[np.ndarray]:
     # get the dimensions
     dims = [int(_) for _ in grid_spec.split('x')]
     coords = vario.coordinates
@@ -113,3 +114,28 @@ def build_grid(vario: skg.Variogram, grid_spec: str):
         coord_mesh.append([np.linspace(coords[:,d].min(), coords[:,d].max(), dim)])
     
     return coord_mesh
+
+def build_simulation_nc(simulation: np.array, coord_mesh: list[np.array], n_simulation: int, name: str):
+    generic_coords = ['x', 'y', 'z']
+    p = Path(f"/out/{name}_simulation.nc")
+    
+    new_ds = xr.Dataset(
+        {
+            f'{name}': (['iteration', *generic_coords[:len(coord_mesh)]], simulation[np.newaxis, ...]),
+        },
+        coords={
+            'iteration': [n_simulation],
+            **{dim: coord[0] for dim, coord in zip(generic_coords,coord_mesh)}
+        }
+    )
+
+    if p.exists():
+        ds = xr.open_dataset(p)
+        merged = ds.merge(new_ds).copy()
+        ds.close()
+        p.unlink()
+        merged.to_netcdf(p)
+    else:
+        ds = new_ds
+        ds.to_netcdf(p)
+    

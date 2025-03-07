@@ -10,9 +10,10 @@ import numpy as np
 from json2args import get_parameter
 from json2args.logger import logger
 from json2args.data import get_data_paths
+from tqdm import tqdm
 
 from data_io import iter_samples
-from tools import process_variogram, vario_results, read_saved_variogram, build_grid
+from tools import process_variogram, vario_results, read_saved_variogram, build_grid, build_simulation_nc
 
 # parse parameters
 kwargs = get_parameter(typed=True)
@@ -89,58 +90,42 @@ elif toolname == 'kriging':
 
 
 elif toolname == 'simulation':
-    raise NotImplementedError
+    logger.info("#TOOL START - simulation")
+    logger.debug(f"Parameters: {kwargs}")
+    logger.debug(f"Datapaths: {datapaths}")
 
-    # get the parameters
-    try:
-        coords = kwargs['coordinates']
-        values = kwargs['values']
-        vario_params = kwargs['variogram']
-    except Exception as e:
-        print(str(e))
-        sys.exit(1)
+    t1 = time()
 
-    # build the variogram
-    print('Estimating variogram...')
-    vario = skg.Variogram(coords, values, **vario_params)
-    print(vario)
+    for (vario, name) in read_saved_variogram(datapaths['variogram']):
+        # build the grid
+        try:
+            coord_mesh = build_grid(vario, kwargs.grid)
+            logger.info(f"Build interpolation grid with {len(coord_mesh)} axes.")
+        except Exception as e:
+            logger.error(f"Error while building interpolation grid: {e}")
+            continue
+        
+        # setup a kriging for the incompressible filed interpolation
+        try:
+            krige = vario.to_gs_krige()
+            cond_srf = gs.CondSRF(krige)
+            logger.debug(f"Use {krige} to create a conditioned spatial random field: {cond_srf}")
+        except Exception as e:
+            logger.error(f"Error while initializing the Kriging and SRF: {e}")
+            continue
+        
+        t2 = time()
+        logger.info(f"Start {kwargs.n_simulations} for {name}...")
+        for n_simulation in tqdm(range(kwargs.n_simulations), total=kwargs.n_simulations):
+            field = cond_srf.structured(coord_mesh, seed=kwargs.seed + n_simulation)
+            build_simulation_nc(field, coord_mesh, n_simulation, name)
 
-    # build the grid
-    try:
-        coord_mesh = build_grid(vario, kwargs['grid'])
-    except Exception as e:
-        print(str(e))
-        sys.exit(1)
+        t3 = time()
+        logger.info(f"Finished simulation of {n_simulation} fields for {name} in {t3 - t2:.2f} seconds.")
 
-    # get a kriging instance and a random field generator
-    krige = vario.to_gs_krige()
-    cond_srf = gs.CondSRF(krige)
+    logger.info(f"Total runtime: {time() - t1:.2f} seconds.")
+    logger.info("#TOOL END - simulation")
 
-    # build the result container
-    fields = []
-
-    # get the N keyword, defaults to 100
-    N = kwargs.get('n_simulations', 100)
-    seed = kwargs.get('seed', 42)
-    
-    print(f'Starting {N} iterations seeded {seed}')
-    for i in progressbar.progressbar(range(N)):
-        field = cond_srf.structured(coord_mesh, seed=seed + i)
-        fields.append(field)
-    
-    # TODO: enable saving all simulations into a netCDF
-    ndims = len(coord_mesh)
-    stack = np.stack(fields, axis=ndims)
-
-    # create results
-    sim_mean = np.mean(stack, axis=ndims)
-    sim_std = np.std(stack, axis=ndims)
-
-    np.savetxt('/out/simulation_mean.dat', sim_mean)
-    np.savetxt('/out/simulation_std.dat', sim_std)
-
-    # save variogram for reference
-    vario_results(vario)
 
 # Tool is unknown
 else:
