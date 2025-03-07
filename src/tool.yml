@@ -144,19 +144,24 @@ tools:
     title: Geostatistical simulation
     description: Perform an iterative geostatistical simulation using the method after Heße (2013)
     parameters:
-      coordinates:
-        type: file
-      values:
-        type: file
-      variogram:
-        type: file
-        description: A JSON file containing the variogram parameters as returned by Variogram.describe()['params']
       grid:
         type: string
         description: The grid size needs to be defined by a string like NNxMM, where NN are the number of rows and MM the number of columns 
       n_simulations:
-        type: int
+        type: integer
+        default: 10
         description: Number of simulations to run. Defaults to 100
       seed:
-        type: int
+        type: integer
+        default: 42
         description: Seed for the random number generator. Defaults to 42. It is highly recommended to change this number on every run
+    data:
+      variogram:
+        extension:
+          - json
+          - pkl
+        description: |
+          A JSON file containing the variogram parameters as returned by Variogram.describe()['params'].
+          You can use the 'variogram' tool to generate such a file in the output.
+          You can only use the 
+        example: /input/variogram.json
