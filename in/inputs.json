@@ -1,0 +1,22 @@
+{
+    "variogram": {
+        "parameters": {
+            "n_lags": 25,
+            "model": "exponential",
+            "maxlag": "median"
+
+        },
+        "data": {
+            "field": "/in/sresa1b_ccsm3_pr.nc"
+        }
+    },
+    "kriging": {
+        "parameters": {
+            "algorithm": "ordinary",
+            "grid": "250x250"
+        },
+        "data": {
+            "variogram": "/in/pr_timeidx_1_variogram.json"
+        }
+    }
+}

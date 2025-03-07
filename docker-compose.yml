@@ -1,0 +1,9 @@
+services:
+  geostat:
+    build: .
+    volumes:
+      - ./in:/in
+      - ./out:/out
+      - ./src:/src
+#    platform: linux/amd64
+    command: "echo 'Run like: docker compose  run --rm geostat python run.py'"

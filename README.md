@@ -17,7 +17,7 @@ Each container needs at least the following structure:
 ```
 /
 |- in/
-|  |- parameters.json
+|  |- inputs.json
 |- out/
 |  |- ...
 |- src/
@@ -25,7 +25,7 @@ Each container needs at least the following structure:
 |  |- run.py
 ```
 
-* `parameters.json` are parameters. Whichever framework runs the container, this is how parameters are passed.
+* `inputs.json` are parameters. Whichever framework runs the container, this is how parameters are passed.
 * `tool.yml` is the tool specification. It contains metadata about the scope of the tool, the number of endpoints (functions) and their parameters
 * `run.py` is the tool itself, or a Python script that handles the execution. It has to capture all outputs and either `print` them to console or create files in `/out`
 

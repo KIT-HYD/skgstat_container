@@ -1,95 +1,96 @@
 import os
 import sys
 from datetime import datetime as dt
-from pprint import pprint
 from time import time
 import json
 
 import skgstat as skg
 import gstools as gs
 import numpy as np
-import progressbar
 from json2args import get_parameter
-from skgstat_uncertainty.processor import sampling
+from json2args.logger import logger
+from json2args.data import get_data_paths
 
-from tool_lib import vario_results, build_grid, parse_array_input
+from data_io import iter_samples
+from tools import process_variogram, vario_results, read_saved_variogram, build_grid
 
 # parse parameters
-kwargs = get_parameter()
+kwargs = get_parameter(typed=True)
+datapaths = get_data_paths()
 
 # check if a toolname was set in env
 toolname = os.environ.get('TOOL_RUN', 'variogram').lower()
 
 # switch the tool
 if toolname == 'variogram':
-    # handle maxlag settings
-    if 'maxlag' in kwargs and kwargs['maxlag'] not in ('mean', 'median'):
-        kwargs['maxlag'] = float(kwargs['maxlag'])
+    logger.info("#TOOL START - variogram")
+    logger.debug(f"Parameters: {kwargs}")
+    logger.debug(f"Datapaths: {datapaths}")
     
-    # handle fit_sigma settings
-    if 'fit_sigma' in kwargs and (kwargs['fit_sigma'] is None or kwargs['fit_sigma'].lower() == 'none'):
-        kwargs['fit_sigma'] = None
-    
-    print('Estimating a variogram...')
-
-    # estimate the variogram
-    vario = skg.Variogram(**kwargs)
-
-    print('done.')
-    print(vario)
-
-    # create the output
-    vario_results(vario)
+    for (coords, values), name in iter_samples(datapaths, sample_size=kwargs.sample_size):
+        t1 = time()
+        try:
+            vario = process_variogram(coords, values, kwargs)
+        except Exception as e:
+            logger.error(f"Error while processing variogram: {e}")
+            continue
+        
+        logger.info(f"Estimated a variogram for {name} in {time() - t1:.2f} seconds.")
+        logger.info(str(vario))
+        logger.debug(f"Variogram: {vario.describe()}")
+        
+        # create the output
+        vario_results(vario, name)
+    logger.info("#TOOL END - variogram")
 
 # Kriging tool
 elif toolname == 'kriging':
-    # get the parameters
-    try:
-        coords = kwargs['coordinates']
-        values = kwargs['values']
-        vario_params = kwargs['variogram']
-    except Exception as e:
-        print(str(e))
-        sys.exit(1)
+    logger.info("#TOOL START - kriging")
+    logger.debug(f"Parameters: {kwargs}")
+    logger.debug(f"Datapaths: {datapaths}")
 
-    # build the variogram
-    print('Estimating variogram...')
-    vario = skg.Variogram(coords, values, **vario_params)
-    print(vario)
+    t1 = time()
 
-    # build the grid
-    try:
-        coord_mesh = build_grid(vario, kwargs['grid'])
-    except Exception as e:
-        print(str(e))
-        sys.exit(1)
+    # for each variogram
+    for vario, name in read_saved_variogram(datapaths['variogram']):
+        # build the grid
+        try:
+            coord_mesh = build_grid(vario, kwargs.grid)
+            logger.info(f"Build interpolation grid with {len(coord_mesh)} axes.")
+        except Exception as e:
+            logger.error(f"Error while building interpolation grid: {e}")
+            continue
     
-
-    # get the kriging algorithm
-    if kwargs['algorithm'] == 'simple':
-        args = {'mean': kwargs['mean']}
-    elif kwargs['algorithm'] == 'universal':
-        args = {'drift_function': kwargs['drift_function']}
-    else:
-        args = {'unbiased': True}
+        # get the kriging algorithm
+        if kwargs.algorithm == 'simple':
+            args = {'mean': kwargs['mean']}
+        elif kwargs.algorithm == 'universal':
+            args = {'drift_function': kwargs['drift_function']}
+        else:
+            args = {'unbiased': True}
+        logger.debug(f"Derived Kriging settings: {args}")
     
-    # interpolate
-    print('Start interpolation...', end='')
-    t1 = dt.now()
-    krige = vario.to_gs_krige(**args)
-    field, sigma = krige.structured(coord_mesh)
-    t2 = dt.now()
-    print(f'done. Took {round((t2 - t1).total_seconds(), 2)} seconds.')
+        # interpolate
+        try: 
+            t2 = time()
+            krige = vario.to_gs_krige(**args)
+            field, sigma = krige.structured(coord_mesh)
+            t3 = time()
+        except Exception as e:
+            logger.error(f"Error while interpolating {name}: {e}")
+            continue
+        logger.info(f"Interpolated {name} in {t3 - t2:.2f} seconds.")
 
-    # write results
-    np.savetxt('/out/kriging.dat', field)
-    np.savetxt('/out/sigma.dat', sigma)
+        # write results
+        np.savetxt(f"/out/{name}_kriging.dat", field)
+        np.savetxt(f"/out/{name}_sigma.dat", sigma)
+    logger.info(f"Total runtime: {time() - t1:.2f} seconds.")
+    logger.info("#TOOL END - kriging")
 
-    # create the output
-    vario_results(vario)
 
-# TODO: add some profiling 
 elif toolname == 'simulation':
+    raise NotImplementedError
+
     # get the parameters
     try:
         coords = kwargs['coordinates']
@@ -139,105 +140,6 @@ elif toolname == 'simulation':
     np.savetxt('/out/simulation_std.dat', sim_std)
 
     # save variogram for reference
-    vario_results(vario)
-
-elif toolname == 'sample':
-    # get the field data
-    try:
-        field = parse_array_input(kwargs['field'])
-    except Exception as e:
-        print(str(e))
-        sys.exit(1)
-
-    # get the parameters
-    try:
-        method = kwargs.get('method', 'random')
-        args = dict()
-        args['N'] = kwargs['sample_size']
-        if method.lower() == 'random':
-            args['seed'] = kwargs.get('seed')
-        elif method.lower() == 'grid':
-            # build grid options
-            if 'spacing' in kwargs:
-                args['spacing'] = kwargs['spacing']
-            elif 'shape' in kwargs:
-                args['shape'] = kwargs['shape']
-            else:
-                raise ValueError("Either 'spacing' or 'shape' has to be set for grid sampling.")
-            
-            # offset
-            args['offset'] = kwargs.get('offset')
-        else:
-            raise ValueError(f"The sampling method '{method}' is not known.")
-    except Exception as e:
-        print(str(e))
-        sys.exit(1)
-
-    # all args are in - do the sampling
-    print('Creating sample...', end='')
-    if method.lower() == 'random':
-        coordinates, values = sampling.random(field, **args)
-    else:
-        coordinates, values = sampling.grid(field, **args)
-    print('done.')
-
-    # save
-    np.savetxt('/out/coordinates.dat', coordinates)
-    np.savetxt('/out/values.dat', values)
-
-elif toolname == 'cross-validation':
-    # get the parameters
-    try:
-        coords = kwargs['coordinates']
-        values = kwargs['values']
-        vario_params = kwargs['variogram']
-        measure = kwargs.get('measure', 'rmse')
-    except Exception as e:
-        print(str(e))
-        sys.exit(1)
-
-    # build the variogram
-    print('Estimating variogram...')
-    vario = skg.Variogram(coords, values, **vario_params)
-    print(vario)
-
-    # get the cov-model
-    covmodel = vario.to_gstools()
-
-    # get the number
-    n = len(coords)
-    err = []
-
-    # do the cross validation
-    t1 = time()
-    for it in range(n):
-        x = np.array([c for i, c in enumerate(coords) if i != it]).T
-        y = [v for i, v in enumerate(values) if i != it]
-
-        # build the kriging
-        krige = gs.Krige(covmodel, x, y, fit_variogram=False)
-        y_pred = krige(coords[it].T)
-
-        err.append(y_pred - values[it])
-    t2 =  time()
-    
-    # calculate the measure
-    if measure.lower() == 'rmse':
-        m = np.sqrt(np.mean(np.power(err, 2)))
-    elif measure.lower() == 'mad':
-        m = np.median(np.abs(err))
-    else:
-        m = np.mean(np.abs(err))
-    
-    # print results
-    print(f'Took {np.round(t2 - t1, 2)} seconds.')
-    print(f'{measure.upper()}: {m}')
-
-    # also to json
-    with open('/out/cross_validation.json', 'w') as f:
-        json.dump({measure: m}, f)
-
-    # print the variogram results
     vario_results(vario)
 
 # Tool is unknown
