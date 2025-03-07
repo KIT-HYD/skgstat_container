@@ -1,14 +1,26 @@
 # base image
-FROM python:3.10.8
+FROM python:3.13.1
+
+#RUN apt-get update && apt-get install -y binutils gdal-bin libgdal-dev && \
+#    pip install --upgrade pip && \
+#    pip install GDAL==$(gdal-config --version | awk -F'[.]' '{print $1"."$2}')
+RUN apt-get update && apt-get install -y binutils gdal-bin libgdal-dev && \
+    pip install --upgrade pip
 
 # install geostatistical libraries
-RUN pip install scikit-gstat==1.0.2 gstools==1.4.0 plotly==5.11.0 skgstat-uncertainty==1.8.0 xarray==2022.11.0 netcdf4==1.6.1
+RUN pip install scikit-gstat==1.0.19 \
+    gstools \
+    plotly \
+    "xarray[complete]" \
+    netcdf4 \
+    gstatsim==1.0.6 \
+    "json2args[data]==0.7.0" \
+    tqdm \
+    rioxarray
 
-# install some helpers to produce nicer output
-RUN pip install progressbar2
 
-# install the Python toolbox-runner
-RUN pip install json2args==0.4.0
+# uncomment for development
+RUN pip install ipython
 
 # create the tool input structure
 RUN mkdir /in
